@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Airdrop Tracker</title>
+    <style>
+      body {
+        width: 300px;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        margin: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .header p {
+        margin: 5px 0 0 0;
+        font-size: 12px;
+        opacity: 0.8;
+      }
+
+      .stats {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+      }
+
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .stat-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        opacity: 0.8;
+      }
+
+      .stat-value {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-primary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #667eea;
+        font-weight: 600;
+      }
+
+      .btn-primary:hover {
+        background: white;
+      }
+
+      .settings {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .setting-label {
+        font-size: 12px;
+      }
+
+      .toggle {
+        position: relative;
+        width: 40px;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .toggle.active {
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      .toggle::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+      }
+
+      .toggle.active::after {
+        transform: translateX(20px);
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 10px;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🚀 Airdrop Tracker</h1>
+      <p>Capture URLs with the floating + button</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat-item">
+        <span class="stat-label">Total Saved</span>
+        <span class="stat-value" id="totalSaved">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">This Week</span>
+        <span class="stat-value" id="thisWeek">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Last Saved</span>
+        <span class="stat-value" id="lastSaved">Never</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="viewAll">View All Saved URLs</button>
+      <button class="btn" id="exportData">Export Data</button>
+      <button class="btn" id="clearData">Clear All Data</button>
+    </div>
+
+    <div class="settings">
+      <div class="setting-item">
+        <span class="setting-label">Show Notifications</span>
+        <div class="toggle active" id="notificationsToggle"></div>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Auto-save</span>
+        <div class="toggle" id="autoSaveToggle"></div>
+      </div>
+    </div>
+
+    <div class="footer">Version 1.0.0</div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
