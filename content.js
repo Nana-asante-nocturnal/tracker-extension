@@ -4,6 +4,7 @@
 
   // Flag to prevent multiple button creation
   let buttonCreated = false;
+  let didDrag = false; // **NEW:** Flag to track if a drag occurred
 
   // Check if button already exists to prevent duplicates
   if (document.getElementById('airdrop-tracker-button') || buttonCreated) {
@@ -55,6 +56,13 @@
 
   // Handle button click
   async function handleButtonClick(event) {
+    // **UPDATED:** If a drag just happened, do not trigger the save
+    if (didDrag) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
 
@@ -169,7 +177,7 @@
       button.style.left = position.left || 'auto';
       button.style.bottom = position.bottom || 'auto';
 
-      // **UPDATED:** Add helper classes based on loaded position
+      // Add helper classes based on loaded position
       if (position.top !== '50%') {
         button.classList.add('is-positioned');
       }
@@ -201,7 +209,7 @@
 
   // Snap button to the nearest edge
   function snapToEdge(button) {
-    // **UPDATED:** Add this class to ensure transforms are off
+    // Add this class to ensure transforms are off
     button.classList.add('is-positioned');
 
     const rect = button.getBoundingClientRect();
@@ -242,14 +250,14 @@
       button.style.right = 'auto';
       button.style.top = currentTop + 'px'; // Preserve vertical drag position
       button.style.bottom = 'auto';
-      button.classList.add('snapped-left'); // **UPDATED:** Add left class
+      button.classList.add('snapped-left'); // Add left class
     } else if (closestEdge.edge === 'right') {
       // Snap to right edge
       button.style.left = 'auto';
       button.style.right = '0px';
       button.style.top = currentTop + 'px'; // Preserve vertical drag position
       button.style.bottom = 'auto';
-      button.classList.remove('snapped-left'); // **UPDATED:** Remove left class
+      button.classList.remove('snapped-left'); // Remove left class
     }
   }
 
@@ -272,9 +280,10 @@
       if (e.target.classList.contains('airdrop-tracker-tooltip')) return;
       e.preventDefault();
 
+      didDrag = false; // **UPDATED:** Reset drag flag on mousedown
       isDragging = true;
       button.classList.add('dragging');
-      // **UPDATED:** Add class to disable transform:translateY
+      // Add class to disable transform:translateY
       button.classList.add('is-positioned');
 
       const rect = button.getBoundingClientRect();
@@ -283,7 +292,7 @@
       startLeft = rect.left;
       startTop = rect.top;
 
-      // **UPDATED:** Set top to pixel value to prevent jump
+      // Set top to pixel value to prevent jump
       button.style.top = startTop + 'px';
       button.style.transform = 'none'; // Explicitly override transform during drag
     }
@@ -292,9 +301,10 @@
       if (e.target.classList.contains('airdrop-tracker-tooltip')) return;
       e.preventDefault();
 
+      didDrag = false; // **UPDATED:** Reset drag flag on touchstart
       isDragging = true;
       button.classList.add('dragging');
-      // **UPDATED:** Add class to disable transform:translateY
+      // Add class to disable transform:translateY
       button.classList.add('is-positioned');
 
       const rect = button.getBoundingClientRect();
@@ -303,7 +313,7 @@
       startLeft = rect.left;
       startTop = rect.top;
 
-      // **UPDATED:** Set top to pixel value to prevent jump
+      // Set top to pixel value to prevent jump
       button.style.top = startTop + 'px';
       button.style.transform = 'none'; // Explicitly override transform during drag
     }
@@ -311,6 +321,7 @@
     function drag(e) {
       if (!isDragging) return;
       e.preventDefault();
+      didDrag = true; // **UPDATED:** Set drag flag if mouse moves
 
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
@@ -343,6 +354,7 @@
     function dragTouch(e) {
       if (!isDragging) return;
       e.preventDefault();
+      didDrag = true; // **UPDATED:** Set drag flag if touch moves
 
       const deltaX = e.touches[0].clientX - startX;
       const deltaY = e.touches[0].clientY - startY;
