@@ -4,33 +4,83 @@
   top: 50%;
   right: 0;
   transform: translateY(-50%);
-  width: 60px;
-  height: 40px;
+  width: 32px;
+  height: 80px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 8px 0 0 8px;
-  cursor: pointer;
+  border-radius: 6px 0 0 6px; /* Default: rounded on left side for right edge */
+  cursor: grab;
   z-index: 10000;
   box-shadow: -2px 4px 15px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 16px;
   color: white;
   font-weight: bold;
   font-family: Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
-.airdrop-tracker-button:hover {
-  transform: translateY(-50%) translateX(-5px);
-  box-shadow: -4px 6px 20px rgba(0, 0, 0, 0.3);
-  width: 65px;
+/* When positioned on left side, round the right side instead */
+.airdrop-tracker-button[style*='left'] {
+  transform: none;
+  border-radius: 0 6px 6px 0; /* Rounded on right side for left edge */
+  box-shadow: 2px 4px 15px rgba(0, 0, 0, 0.2); /* Shadow on the right */
 }
 
-.airdrop-tracker-button:active {
-  transform: translateY(-50%) translateX(-2px);
-  width: 58px;
+.airdrop-tracker-button:hover:not(.dragging) {
+  transform: translateY(-50%) translateX(-3px);
+  box-shadow: -3px 5px 18px rgba(0, 0, 0, 0.3);
+  width: 36px;
+}
+
+.airdrop-tracker-button:active:not(.dragging) {
+  transform: translateY(-50%) translateX(-1px);
+  width: 30px;
+}
+
+/* Hover effects for dynamically positioned button (left side) */
+.airdrop-tracker-button[style*='left']:hover:not(.dragging) {
+  transform: translateX(3px);
+  box-shadow: 3px 5px 18px rgba(0, 0, 0, 0.3);
+  width: 36px;
+}
+
+.airdrop-tracker-button[style*='left']:active:not(.dragging) {
+  transform: translateX(1px);
+  width: 30px;
+}
+
+/* Dragging state */
+.airdrop-tracker-button.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+  transform: none;
+  transition: none;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  z-index: 10001;
+}
+
+.airdrop-tracker-button.dragging:hover {
+  transform: none;
+  width: 32px;
+}
+
+/* Smooth snapping transition */
+.airdrop-tracker-button:not(.dragging) {
+  transition: left 0.2s ease, right 0.2s ease, top 0.2s ease, bottom 0.2s ease;
+}
+
+/* Snapping visual feedback */
+.airdrop-tracker-button.snapping {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
 }
 
 .airdrop-tracker-button::before {
@@ -46,15 +96,15 @@
 @keyframes pulse {
   0% {
     transform: translateY(-50%) translateX(0);
-    width: 60px;
+    width: 32px;
   }
   50% {
-    transform: translateY(-50%) translateX(-3px);
-    width: 63px;
+    transform: translateY(-50%) translateX(-2px);
+    width: 34px;
   }
   100% {
     transform: translateY(-50%) translateX(0);
-    width: 60px;
+    width: 32px;
   }
 }
 
@@ -92,6 +142,21 @@
   pointer-events: none;
   transition: opacity 0.3s ease;
   font-family: Arial, sans-serif;
+  z-index: 10002;
+}
+
+/* Tooltip positioning for dynamically positioned button */
+.airdrop-tracker-button:not([style*='right: 0']) .airdrop-tracker-tooltip {
+  right: auto;
+  left: -140px;
+}
+
+.airdrop-tracker-button:not([style*='right: 0'])
+  .airdrop-tracker-tooltip::after {
+  left: auto;
+  right: -5px;
+  border-left-color: transparent;
+  border-right-color: rgba(0, 0, 0, 0.8);
 }
 
 .airdrop-tracker-tooltip.show {

@@ -2,13 +2,23 @@
 (function () {
   'use strict';
 
+  // Flag to prevent multiple button creation
+  let buttonCreated = false;
+
   // Check if button already exists to prevent duplicates
-  if (document.getElementById('airdrop-tracker-button')) {
+  if (document.getElementById('airdrop-tracker-button') || buttonCreated) {
     return;
   }
 
   // Create the floating button
-  function createFloatingButton() {
+  async function createFloatingButton() {
+    // Prevent multiple button creation
+    if (buttonCreated || document.getElementById('airdrop-tracker-button')) {
+      return;
+    }
+
+    buttonCreated = true;
+
     const button = document.createElement('button');
     button.id = 'airdrop-tracker-button';
     button.className = 'airdrop-tracker-button';
@@ -21,8 +31,14 @@
 
     button.appendChild(tooltip);
 
+    // Load saved position
+    await loadButtonPosition(button);
+
     // Add click event listener
     button.addEventListener('click', handleButtonClick);
+
+    // Add drag event listeners
+    addDragListeners(button);
 
     // Add hover events for tooltip
     button.addEventListener('mouseenter', () => {
@@ -141,6 +157,228 @@
     }
   }
 
+  // Load button position from storage
+  async function loadButtonPosition(button) {
+    try {
+      const result = await chrome.storage.local.get(['buttonPosition']);
+      const position = result.buttonPosition || { top: '50%', right: '0' };
+
+      // Apply saved position
+      button.style.top = position.top;
+      button.style.right = position.right;
+      button.style.left = position.left || 'auto';
+      button.style.bottom = position.bottom || 'auto';
+    } catch (error) {
+      console.error('Error loading button position:', error);
+    }
+  }
+
+  // Save button position to storage
+  async function saveButtonPosition(button) {
+    try {
+      const position = {
+        top: button.style.top,
+        right: button.style.right,
+        left: button.style.left,
+        bottom: button.style.bottom,
+      };
+
+      await chrome.storage.local.set({ buttonPosition: position });
+    } catch (error) {
+      console.error('Error saving button position:', error);
+    }
+  }
+
+  // Snap button to the nearest edge
+  function snapToEdge(button) {
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const buttonWidth = rect.width;
+    const buttonHeight = rect.height;
+
+    const currentLeft = rect.left;
+    const currentTop = rect.top;
+
+    // Calculate distances to left and right edges only
+    const distanceToLeft = currentLeft;
+    const distanceToRight = viewportWidth - currentLeft - buttonWidth;
+
+    // Determine which edge is closest (left or right only)
+    const distances = [
+      { edge: 'left', distance: distanceToLeft },
+      { edge: 'right', distance: distanceToRight },
+    ];
+
+    // Sort by distance and get the closest
+    distances.sort((a, b) => a.distance - b.distance);
+    const closestEdge = distances[0];
+
+    // Always snap to the closest edge
+    console.log(
+      `Snapping to ${closestEdge.edge} edge (distance: ${closestEdge.distance})`
+    );
+
+    // Add visual feedback for snapping
+    button.classList.add('snapping');
+    setTimeout(() => button.classList.remove('snapping'), 300);
+
+    if (closestEdge.edge === 'left') {
+      // Snap to left edge
+      button.style.left = '0px';
+      button.style.right = 'auto';
+      button.style.top = currentTop + 'px';
+      button.style.bottom = 'auto';
+    } else if (closestEdge.edge === 'right') {
+      // Snap to right edge
+      button.style.left = 'auto';
+      button.style.right = '0px';
+      button.style.top = currentTop + 'px';
+      button.style.bottom = 'auto';
+    }
+  }
+
+  // Add drag functionality to the button
+  function addDragListeners(button) {
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    // Mouse events
+    button.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', endDrag);
+
+    // Touch events for mobile
+    button.addEventListener('touchstart', startDragTouch, { passive: false });
+    document.addEventListener('touchmove', dragTouch, { passive: false });
+    document.addEventListener('touchend', endDragTouch);
+
+    function startDrag(e) {
+      // Only start drag if clicking on the button itself, not the tooltip
+      if (e.target.classList.contains('airdrop-tracker-tooltip')) {
+        return;
+      }
+
+      isDragging = true;
+      button.classList.add('dragging');
+
+      const rect = button.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+
+      e.preventDefault();
+    }
+
+    function startDragTouch(e) {
+      if (e.target.classList.contains('airdrop-tracker-tooltip')) {
+        return;
+      }
+
+      isDragging = true;
+      button.classList.add('dragging');
+
+      const rect = button.getBoundingClientRect();
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+
+      e.preventDefault();
+    }
+
+    function drag(e) {
+      if (!isDragging) return;
+
+      e.preventDefault();
+
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+
+      let newLeft = startLeft + deltaX;
+      let newTop = startTop + deltaY;
+
+      // Constrain to viewport
+      const buttonRect = button.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      newLeft = Math.max(
+        0,
+        Math.min(newLeft, viewportWidth - buttonRect.width)
+      );
+      newTop = Math.max(
+        0,
+        Math.min(newTop, viewportHeight - buttonRect.height)
+      );
+
+      // Apply new position (no snapping during drag for smooth movement)
+      button.style.left = newLeft + 'px';
+      button.style.top = newTop + 'px';
+      button.style.right = 'auto';
+      button.style.bottom = 'auto';
+    }
+
+    function dragTouch(e) {
+      if (!isDragging) return;
+
+      e.preventDefault();
+
+      const deltaX = e.touches[0].clientX - startX;
+      const deltaY = e.touches[0].clientY - startY;
+
+      let newLeft = startLeft + deltaX;
+      let newTop = startTop + deltaY;
+
+      // Constrain to viewport
+      const buttonRect = button.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      newLeft = Math.max(
+        0,
+        Math.min(newLeft, viewportWidth - buttonRect.width)
+      );
+      newTop = Math.max(
+        0,
+        Math.min(newTop, viewportHeight - buttonRect.height)
+      );
+
+      // Apply new position (no snapping during drag for smooth movement)
+      button.style.left = newLeft + 'px';
+      button.style.top = newTop + 'px';
+      button.style.right = 'auto';
+      button.style.bottom = 'auto';
+    }
+
+    function endDrag() {
+      if (!isDragging) return;
+
+      isDragging = false;
+      button.classList.remove('dragging');
+
+      // Apply magnetic snapping to edges
+      snapToEdge(button);
+
+      // Save position
+      saveButtonPosition(button);
+    }
+
+    function endDragTouch() {
+      if (!isDragging) return;
+
+      isDragging = false;
+      button.classList.remove('dragging');
+
+      // Apply magnetic snapping to edges
+      snapToEdge(button);
+
+      // Save position
+      saveButtonPosition(button);
+    }
+  }
+
   // Initialize the button when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', createFloatingButton);
@@ -151,11 +389,24 @@
   // Re-inject button if page content changes (for SPAs)
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (
-        mutation.type === 'childList' &&
-        !document.getElementById('airdrop-tracker-button')
-      ) {
-        createFloatingButton();
+      if (mutation.type === 'childList') {
+        // Check if our button was actually removed
+        const removedNodes = Array.from(mutation.removedNodes);
+        const wasButtonRemoved = removedNodes.some(
+          (node) =>
+            node.id === 'airdrop-tracker-button' ||
+            (node.querySelector &&
+              node.querySelector('#airdrop-tracker-button'))
+        );
+
+        // Only create a new button if it was actually removed and we're not dragging
+        if (
+          wasButtonRemoved &&
+          !document.querySelector('.airdrop-tracker-button.dragging')
+        ) {
+          buttonCreated = false; // Reset flag
+          createFloatingButton();
+        }
       }
     });
   });
