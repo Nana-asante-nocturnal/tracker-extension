@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Airdrop Tracker",
   "version": "1.0",
-  "description": "Capture URLs and site names with a floating + button",
+  "description": "This extension allows you to track airdrops and save them on our site",
   "permissions": ["activeTab", "storage", "scripting"],
   "host_permissions": ["https://*/*", "http://*/*"],
   "background": {
