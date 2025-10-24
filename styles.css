@@ -3,7 +3,7 @@
   position: fixed;
   top: 50%;
   right: 0;
-  transform: translateY(-50%);
+  /* transform: translateY(-50%); */ /* MOVED to :not(.is-positioned) */
   width: 32px;
   height: 80px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -26,32 +26,48 @@
   -ms-user-select: none;
 }
 
-/* When positioned on left side, round the right side instead */
-.airdrop-tracker-button[style*='left'] {
-  transform: none;
+/* NEW: Apply vertical centering ONLY if not positioned by JS */
+.airdrop-tracker-button:not(.is-positioned) {
+  transform: translateY(-50%);
+}
+
+/* UPDATED: When positioned on left side, use .snapped-left class */
+.airdrop-tracker-button.snapped-left {
   border-radius: 0 6px 6px 0; /* Rounded on right side for left edge */
   box-shadow: 2px 4px 15px rgba(0, 0, 0, 0.2); /* Shadow on the right */
 }
 
-.airdrop-tracker-button:hover:not(.dragging) {
-  transform: translateY(-50%) translateX(-3px);
+/* --- UPDATED HOVER/ACTIVE STATES --- */
+
+/* Right side hover/active (default OR positioned) */
+.airdrop-tracker-button:not(.snapped-left):hover:not(.dragging) {
+  transform: translateX(-3px); /* Default transform + hover */
   box-shadow: -3px 5px 18px rgba(0, 0, 0, 0.3);
   width: 36px;
 }
-
-.airdrop-tracker-button:active:not(.dragging) {
-  transform: translateY(-50%) translateX(-1px);
+.airdrop-tracker-button:not(.snapped-left):active:not(.dragging) {
+  transform: translateX(-1px);
   width: 30px;
 }
+/* Handle the default centered state separately */
+.airdrop-tracker-button:not(.is-positioned):not(.snapped-left):hover:not(
+    .dragging
+  ) {
+  transform: translateY(-50%) translateX(-3px);
+}
+.airdrop-tracker-button:not(.is-positioned):not(.snapped-left):active:not(
+    .dragging
+  ) {
+  transform: translateY(-50%) translateX(-1px);
+}
 
-/* Hover effects for dynamically positioned button (left side) */
-.airdrop-tracker-button[style*='left']:hover:not(.dragging) {
+/* Left side hover/active */
+.airdrop-tracker-button.snapped-left:hover:not(.dragging) {
   transform: translateX(3px);
   box-shadow: 3px 5px 18px rgba(0, 0, 0, 0.3);
   width: 36px;
 }
-
-.airdrop-tracker-button[style*='left']:active:not(.dragging) {
+.airdrop-tracker-button.snapped-left:active:not(.dragging) {
   transform: translateX(1px);
   width: 30px;
 }
@@ -60,7 +76,7 @@
 .airdrop-tracker-button.dragging {
   cursor: grabbing;
   opacity: 0.8;
-  transform: none;
+  transform: none; /* Override all transforms */
   transition: none;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
   z-index: 10001;
@@ -73,7 +89,9 @@
 
 /* Smooth snapping transition */
 .airdrop-tracker-button:not(.dragging) {
-  transition: left 0.2s ease, right 0.2s ease, top 0.2s ease, bottom 0.2s ease;
+  transition: left 0.2s ease, right 0.2s ease, top 0.2s ease, bottom 0.2s ease,
+    width 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease,
+    border-radius 0.3s ease;
 }
 
 /* Snapping visual feedback */
@@ -85,15 +103,55 @@
 
 .airdrop-tracker-button::before {
   content: '+';
+  transition: content 0.3s ease;
 }
 
-/* Loading state */
+/* --- STATES (Loading, Success, Error) --- */
+/* These are mostly unchanged, but pulse animation is fixed */
+
 .airdrop-tracker-button.loading {
   background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
   animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
+  0% {
+    transform: translateX(0);
+    width: 32px;
+  }
+  50% {
+    transform: translateX(-2px);
+    width: 34px;
+  }
+  100% {
+    transform: translateX(0);
+    width: 32px;
+  }
+}
+/* Pulse animation for left-snapped */
+.airdrop-tracker-button.snapped-left.loading {
+  animation-name: pulse-left;
+}
+@keyframes pulse-left {
+  0% {
+    transform: translateX(0);
+    width: 32px;
+  }
+  50% {
+    transform: translateX(2px);
+    width: 34px;
+  }
+  100% {
+    transform: translateX(0);
+    width: 32px;
+  }
+}
+
+/* Fix pulse for default centered state */
+.airdrop-tracker-button:not(.is-positioned).loading {
+  animation-name: pulse-centered;
+}
+@keyframes pulse-centered {
   0% {
     transform: translateY(-50%) translateX(0);
     width: 32px;
@@ -112,7 +170,6 @@
 .airdrop-tracker-button.success {
   background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
 }
-
 .airdrop-tracker-button.success::before {
   content: '✓';
 }
@@ -121,15 +178,15 @@
 .airdrop-tracker-button.error {
   background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
 }
-
 .airdrop-tracker-button.error::before {
   content: '✗';
 }
 
-/* Tooltip */
+/* --- UPDATED TOOLTIP --- */
 .airdrop-tracker-tooltip {
   position: absolute;
-  right: 70px;
+  /* Default: Right edge, tooltip on left */
+  right: 50px;
   top: 50%;
   transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.8);
@@ -140,29 +197,16 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, left 0.3s ease, right 0.3s ease;
   font-family: Arial, sans-serif;
   z-index: 10002;
-}
-
-/* Tooltip positioning for dynamically positioned button */
-.airdrop-tracker-button:not([style*='right: 0']) .airdrop-tracker-tooltip {
-  right: auto;
-  left: -140px;
-}
-
-.airdrop-tracker-button:not([style*='right: 0'])
-  .airdrop-tracker-tooltip::after {
-  left: auto;
-  right: -5px;
-  border-left-color: transparent;
-  border-right-color: rgba(0, 0, 0, 0.8);
 }
 
 .airdrop-tracker-tooltip.show {
   opacity: 1;
 }
 
+/* Default arrow (right side) */
 .airdrop-tracker-tooltip::after {
   content: '';
   position: absolute;
@@ -171,4 +215,19 @@
   transform: translateY(-50%);
   border: 5px solid transparent;
   border-left-color: rgba(0, 0, 0, 0.8);
+  transition: border 0.3s ease, left 0.3s ease, right 0.3s ease;
+}
+
+/* Tooltip positioning for left-snapped button */
+.airdrop-tracker-button.snapped-left .airdrop-tracker-tooltip {
+  left: 50px;
+  right: auto;
+}
+
+/* Arrow for left-snapped button */
+.airdrop-tracker-button.snapped-left .airdrop-tracker-tooltip::after {
+  left: -10px; /* Position arrow on the left */
+  right: auto;
+  border-left-color: transparent;
+  border-right-color: rgba(0, 0, 0, 0.8); /* Point right */
 }

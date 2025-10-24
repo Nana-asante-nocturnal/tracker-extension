@@ -168,6 +168,16 @@
       button.style.right = position.right;
       button.style.left = position.left || 'auto';
       button.style.bottom = position.bottom || 'auto';
+
+      // **UPDATED:** Add helper classes based on loaded position
+      if (position.top !== '50%') {
+        button.classList.add('is-positioned');
+      }
+      if (position.left === '0px' || position.right === 'auto') {
+        button.classList.add('snapped-left');
+      } else {
+        button.classList.remove('snapped-left');
+      }
     } catch (error) {
       console.error('Error loading button position:', error);
     }
@@ -191,6 +201,9 @@
 
   // Snap button to the nearest edge
   function snapToEdge(button) {
+    // **UPDATED:** Add this class to ensure transforms are off
+    button.classList.add('is-positioned');
+
     const rect = button.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -227,14 +240,16 @@
       // Snap to left edge
       button.style.left = '0px';
       button.style.right = 'auto';
-      button.style.top = currentTop + 'px';
+      button.style.top = currentTop + 'px'; // Preserve vertical drag position
       button.style.bottom = 'auto';
+      button.classList.add('snapped-left'); // **UPDATED:** Add left class
     } else if (closestEdge.edge === 'right') {
       // Snap to right edge
       button.style.left = 'auto';
       button.style.right = '0px';
-      button.style.top = currentTop + 'px';
+      button.style.top = currentTop + 'px'; // Preserve vertical drag position
       button.style.bottom = 'auto';
+      button.classList.remove('snapped-left'); // **UPDATED:** Remove left class
     }
   }
 
@@ -254,13 +269,13 @@
     document.addEventListener('touchend', endDragTouch);
 
     function startDrag(e) {
-      // Only start drag if clicking on the button itself, not the tooltip
-      if (e.target.classList.contains('airdrop-tracker-tooltip')) {
-        return;
-      }
+      if (e.target.classList.contains('airdrop-tracker-tooltip')) return;
+      e.preventDefault();
 
       isDragging = true;
       button.classList.add('dragging');
+      // **UPDATED:** Add class to disable transform:translateY
+      button.classList.add('is-positioned');
 
       const rect = button.getBoundingClientRect();
       startX = e.clientX;
@@ -268,16 +283,19 @@
       startLeft = rect.left;
       startTop = rect.top;
 
-      e.preventDefault();
+      // **UPDATED:** Set top to pixel value to prevent jump
+      button.style.top = startTop + 'px';
+      button.style.transform = 'none'; // Explicitly override transform during drag
     }
 
     function startDragTouch(e) {
-      if (e.target.classList.contains('airdrop-tracker-tooltip')) {
-        return;
-      }
+      if (e.target.classList.contains('airdrop-tracker-tooltip')) return;
+      e.preventDefault();
 
       isDragging = true;
       button.classList.add('dragging');
+      // **UPDATED:** Add class to disable transform:translateY
+      button.classList.add('is-positioned');
 
       const rect = button.getBoundingClientRect();
       startX = e.touches[0].clientX;
@@ -285,12 +303,13 @@
       startLeft = rect.left;
       startTop = rect.top;
 
-      e.preventDefault();
+      // **UPDATED:** Set top to pixel value to prevent jump
+      button.style.top = startTop + 'px';
+      button.style.transform = 'none'; // Explicitly override transform during drag
     }
 
     function drag(e) {
       if (!isDragging) return;
-
       e.preventDefault();
 
       const deltaX = e.clientX - startX;
@@ -313,16 +332,16 @@
         Math.min(newTop, viewportHeight - buttonRect.height)
       );
 
-      // Apply new position (no snapping during drag for smooth movement)
+      // Apply new position
       button.style.left = newLeft + 'px';
-      button.style.top = newTop + 'px';
+      button.style.top = newTop + 'px'; // Update vertical position as user drags
       button.style.right = 'auto';
       button.style.bottom = 'auto';
+      button.style.transform = 'none'; // Keep transform off
     }
 
     function dragTouch(e) {
       if (!isDragging) return;
-
       e.preventDefault();
 
       const deltaX = e.touches[0].clientX - startX;
@@ -345,20 +364,21 @@
         Math.min(newTop, viewportHeight - buttonRect.height)
       );
 
-      // Apply new position (no snapping during drag for smooth movement)
+      // Apply new position
       button.style.left = newLeft + 'px';
-      button.style.top = newTop + 'px';
+      button.style.top = newTop + 'px'; // Update vertical position as user drags
       button.style.right = 'auto';
       button.style.bottom = 'auto';
+      button.style.transform = 'none'; // Keep transform off
     }
 
     function endDrag() {
       if (!isDragging) return;
-
       isDragging = false;
       button.classList.remove('dragging');
+      button.style.transform = ''; // Remove inline override, let CSS classes handle it
 
-      // Apply magnetic snapping to edges
+      // Apply magnetic snapping to edges (left/right only)
       snapToEdge(button);
 
       // Save position
@@ -367,11 +387,11 @@
 
     function endDragTouch() {
       if (!isDragging) return;
-
       isDragging = false;
       button.classList.remove('dragging');
+      button.style.transform = ''; // Remove inline override, let CSS classes handle it
 
-      // Apply magnetic snapping to edges
+      // Apply magnetic snapping to edges (left/right only)
       snapToEdge(button);
 
       // Save position
